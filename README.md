@@ -96,15 +96,13 @@ id	project_id	name	category	institution	email	is_corresponding	score	percentage	
 ## 4. Cara Deploy ke GitHub & Vercel
 
 ### A. Unggah ke GitHub
+Repository lokal sudah diinisialisasi dan di-*commit*. Untuk mengunggah ke akun GitHub `abay-cmd`:
+1. Buat repository kosong baru di GitHub: [https://github.com/new](https://github.com/new) dengan nama `authorank`.
+2. Jalankan perintah push di terminal:
 ```bash
-git init
-git add .
-git commit -m "Initial commit Authorank web app"
-git branch -M main
-git remote add origin https://github.com/USERNAME/authorank.git
 git push -u origin main
 ```
-*(File `.gitignore` sudah otomatis mengabaikan file `.env`, file key JSON, dan node_modules).*
+*(Remote origin sudah disetel ke `https://github.com/abay-cmd/authorank.git`).*
 
 ### B. Deploy di Vercel
 1. Masuk ke dashboard [Vercel](https://vercel.com) dan klik **Add New... → Project**.
