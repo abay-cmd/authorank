@@ -1,0 +1,24 @@
+{
+  "name": "authorank",
+  "version": "1.0.0",
+  "description": "Aplikasi penentu urutan kepenulisan karya tulis ilmiah (artikel, buku, book chapter) berbasis matriks kontribusi CRediT dengan kode akses PIN.",
+  "main": "api/health.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check api/health.js && node --check api/projects.js && node --check api/calculate.js && node --check lib/sheets.js && node --check lib/validation.js"
+  },
+  "keywords": [
+    "authorship-order",
+    "credit-taxonomy",
+    "academic-writing",
+    "contribution-matrix",
+    "google-sheets",
+    "vercel"
+  ],
+  "author": "Authorank Studio",
+  "license": "MIT",
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

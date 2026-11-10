@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authorank — Penentu Urutan Penulis & Matriks Kontribusi Karya Tulis</title>
+  <meta name="description" content="Aplikasi penentu urutan kepenulisan karya tulis ilmiah (artikel jurnal, buku, book chapter) berbasis matriks kontribusi CRediT dan kode akses PIN untuk dosen dan mahasiswa.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN TOKENS & RESET (Adapted from Jobgio Reference: Clean, Soft-card, Dark accents)
+       ========================================================================== */
+    :root {
+      --bg-page: #eef0f3;
+      --bg-surface: #ffffff;
+      --bg-surface-subtle: #f8f9fa;
+      --bg-card: #ffffff;
+      --bg-dark: #121316;
+      --bg-dark-hover: #22252a;
+      --border-subtle: #e2e6eb;
+      --border-focus: #121316;
+
+      --text-main: #11141a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --text-inverse: #ffffff;
+
+      --color-primary: #121316;
+      --color-accent: #2563eb;
+      --color-success: #16a34a;
+      --color-warning: #d97706;
+      --color-danger: #dc2626;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --radius-pill: 9999px;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      --shadow-elevated: 0 20px 35px -10px rgba(0, 0, 0, 0.08);
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --motion-micro: 140ms ease;
+      --motion-ui: 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 12px;
+      }
+    }
+
+    /* ==========================================================================
+       MAIN APP SHELL (Sidebar + Dashboard Container)
+       ========================================================================== */
+    .app-container {
+      max-width: 1520px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 48px);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    @media (max-width: 1080px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==========================================================================
+       SIDEBAR & VINTAGE PEN NIB SKETCH LOGO
+       ========================================================================== */
+    .sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Vintage fountain pen nib sketch logo in pure line-art without back shapes */
+    .pen-nib-sketch {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      stroke: var(--text-main);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .brand-text h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      line-height: 1.1;
+    }
+
+    .brand-text p {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-item button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-pill);
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--motion-ui);
+      text-align: left;
+    }
+
+    .nav-item button svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .nav-item button:hover {
+      background: var(--bg-surface-subtle);
+      color: var(--text-main);
+    }
+
+    .nav-item button.active {
+      background: var(--bg-dark);
+      color: var(--text-inverse);
+    }
+
+    .nav-item button.active svg {
+      stroke: var(--text-inverse);
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      position: relative;
+    }
+
+    .user-avatar .badge-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: var(--bg-dark);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    .user-info h4 {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .user-info p {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       MAIN CONTENT VIEWPORT
+       ========================================================================== */
+    .main-viewport {
+      padding: 36px 40px;
+      background: var(--bg-surface-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 900px) {
+      .main-viewport {
+        padding: 20px;
+        gap: 24px;
+      }
+    }
+
+    /* Top Bar with Project Meta and Action Buttons */
+    .top-action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .project-header-info h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .project-meta-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      background: white;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-pill.dark {
+      background: var(--bg-dark);
+      color: var(--text-inverse);
+      border-color: var(--bg-dark);
+    }
+
+    .badge-pill.status-ready {
+      background: #dcfce7;
+      color: #15803d;
+      border-color: #bbf7d0;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all var(--motion-ui);
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-dark {
+      background: var(--bg-dark);
+      color: var(--text-inverse);
+    }
+
+    .btn-dark:hover {
+      background: var(--bg-dark-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: var(--border-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 0.78rem;
+    }
+
+    /* ==========================================================================
+       SECTION 1: QUICK STATS (Jobgio Row of Vertical Rounded Cards)
+       ========================================================================== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--motion-ui);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .stat-card-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .stat-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       SECTION 2: MIDDLE DUAL PANEL (Chart & Order Hierarchy)
+       ========================================================================== */
+    .middle-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1.1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .middle-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-header h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-bullet {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend-bullet.dark {
+      background: var(--bg-dark);
+    }
+
+    .legend-bullet.muted {
+      background: #cbd5e1;
+    }
+
+    /* Dynamic Visual Bar Chart Container */
+    .chart-canvas-wrap {
+      height: 220px;
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      padding-top: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .chart-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    .bars-pair {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      width: 100%;
+      max-width: 48px;
+      height: 100%;
+    }
+
+    .bar {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .bar.bar-score {
+      background: var(--bg-dark);
+    }
+
+    .bar.bar-percent {
+      background: #e2e8f0;
+    }
+
+    .chart-bar-group:hover .bar.bar-percent {
+      background: #cbd5e1;
+    }
+
+    .bar-tooltip {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-dark);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .chart-bar-group:hover .bar-tooltip {
+      opacity: 1;
+    }
+
+    .chart-bar-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 10px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70px;
+    }
+
+    /* Order Ranking List (Right Panel) */
+    .order-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .order-rank-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      transition: all var(--motion-ui);
+    }
+
+    .order-rank-card.top-rank {
+      background: #fdfdfd;
+      border-color: #121316;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .rank-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .rank-number-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: white;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+
+    .order-rank-card.top-rank .rank-number-badge {
+      background: var(--bg-dark);
+      color: white;
+      border-color: var(--bg-dark);
+    }
+
+    .rank-author-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .rank-author-role {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .rank-badge-status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: white;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .order-rank-card.top-rank .rank-badge-status {
+      background: #f3f4f6;
+      color: #111827;
+      border-color: #e5e7eb;
+    }
+
+    /* ==========================================================================
+       SECTION 3: MANAGE AUTHORS TABLE (Jobgio Style Table)
+       ========================================================================== */
+    .table-panel {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .table-top-header h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .authors-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+    }
+
+    .authors-table th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .authors-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+
+    .authors-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .authors-table tr:hover td {
+      background-color: var(--bg-surface-subtle);
+    }
+
+    .author-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .author-cell-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .author-meta-name {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .author-meta-inst {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .table-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .table-badge.is-corresponding {
+      background: #fef3c7;
+      border-color: #fde68a;
+      color: #b45309;
+    }
+
+    .table-badge.role-dosen {
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+      color: #3730a3;
+    }
+
+    .table-badge.role-mahasiswa {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    .score-value {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .progress-bar-wrap {
+      width: 100px;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--bg-dark);
+      border-radius: 999px;
+    }
+
+    /* Action buttons in table */
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all var(--motion-micro);
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-dark);
+      color: white;
+      border-color: var(--bg-dark);
+    }
+
+    .btn-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* ==========================================================================
+       MODALS & DRAWERS
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(18, 19, 22, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-box.wide {
+      max-width: 860px;
+    }
+
+    @keyframes modalEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .modal-body {
+      padding: 28px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px 28px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: var(--bg-surface-subtle);
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .form-control {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: white;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color var(--motion-micro);
+    }
+
+    .form-control:focus {
+      border-color: var(--border-focus);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Matrix Role Item Row */
+    .role-row {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 14px;
+      background: var(--bg-surface-subtle);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .role-desc-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .role-desc-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .role-level-select {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: white;
+      color: var(--text-main);
+    }
+
+    /* Official Agreement Document Print Layout */
+    .official-doc {
+      background: white;
+      padding: 32px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #1e293b;
+    }
+
+    .doc-header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .doc-header h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .doc-header p {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+
+    .doc-signatures {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .sig-box {
+      border-top: 1px solid #94a3b8;
+      padding-top: 8px;
+      font-size: 0.8rem;
+    }
+
+    .sig-box .name {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .sig-box .role-sub {
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--bg-dark);
+      color: white;
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
+      }
+      .sidebar, .top-action-bar, .stats-row, .middle-grid, .table-panel, .toast-container, .modal-footer, .no-print {
+        display: none !important;
+      }
+      .modal-backdrop {
+        position: static !important;
+        background: none !important;
+        display: block !important;
+        padding: 0 !important;
+      }
+      .modal-box {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+      }
+      .official-doc {
+        border: none !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- APP SHELL -->
+  <div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <!-- BRAND & SKETCH PEN NIB LOGO -->
+        <div class="brand-wrap">
+          <!-- Handcrafted pure line-art vintage fountain pen nib illustration (no background shapes) -->
+          <svg class="pen-nib-sketch" viewBox="0 0 100 100" aria-label="Authorank Pen Nib Logo" role="img">
+            <!-- Pen Nib Outline (Vintage Pointed Contour) -->
+            <path d="M50 8 L32 38 C30 52 26 64 26 78 L74 78 C74 64 70 52 68 38 Z" />
+            <!-- Nib Collar / Section line -->
+            <line x1="26" y1="78" x2="74" y2="78" />
+            <path d="M28 84 L72 84" />
+            <!-- Breather Hole -->
+            <circle cx="50" cy="48" r="4.5" />
+            <!-- Split Tine Slit -->
+            <line x1="50" y1="8" x2="50" y2="43.5" />
+            <!-- Vintage Filigree Engraving Accents -->
+            <path d="M38 46 C42 42 46 42 46 46 C46 54 38 58 36 68" stroke-dasharray="1 1" />
+            <path d="M62 46 C58 42 54 42 54 46 C54 54 62 58 64 68" stroke-dasharray="1 1" />
+            <!-- Heart-shaped vent subtle curve -->
+            <path d="M46 56 Q50 60 54 56" />
+          </svg>
+          <div class="brand-text">
+            <h1>Authorank</h1>
+            <p>Authorship Matrix</p>
+          </div>
+        </div>
+
+        <!-- NAVIGATION -->
+        <nav style="margin-top: 24px;">
+          <ul class="nav-menu">
+            <li class="nav-item">
+              <button type="button" class="active" onclick="switchTab('dashboard')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                Dashboard
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openAddAuthorModal()">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Tambah Kontributor
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openCreditStatementModal()">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                CRediT Statement
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openOfficialAgreementModal()">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Berita Acara Resmi
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openOpenProjectModal()">
+                <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                Buka via PIN
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openSaveProjectModal()">
+                <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Simpan ke Cloud
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" onclick="openDatabaseExplorerModal()">
+                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                Lihat Database
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- SIDEBAR FOOTER (USER & SERVER STATUS) -->
+      <div class="sidebar-footer">
+        <div class="user-avatar">
+          AD
+          <div class="badge-dot" id="serverStatusDot" title="Server Standalone Ready">✓</div>
+        </div>
+        <div class="user-info">
+          <h4>Tim Akademik</h4>
+          <p id="appEnvironmentLabel">Mahasiswa & Dosen</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="main-viewport">
+
+      <!-- TOP ACTION BAR -->
+      <section class="top-action-bar">
+        <div class="project-header-info">
+          <h2 id="displayProjectTitle">Analisis Efektivitas Model Machine Learning</h2>
+          <div class="project-meta-badges">
+            <span class="badge-pill dark" id="displayPubType">Artikel Jurnal Ilmiah</span>
+            <span class="badge-pill" id="displayVenue">Target: Q1 International Journal</span>
+            <span class="badge-pill status-ready" id="displayStatusBadge">✓ Penilaian Siap</span>
+            <span class="badge-pill" id="displayPinBadge">PIN: Aktif</span>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <button class="btn btn-secondary btn-sm" onclick="openEditProjectMetaModal()">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Ubah Judul / Jenis
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openSaveProjectModal()">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+            Simpan Cloud
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openDatabaseExplorerModal()">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Lihat Database
+          </button>
+          <button class="btn btn-dark btn-sm" onclick="openOfficialAgreementModal()">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            Cetak Berita Acara
+          </button>
+        </div>
+      </section>
+
+      <!-- SECTION 1: QUICK STATS ROW (Jobgio inspired rounded tall cards) -->
+      <section class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <div class="stat-value" id="statTotalContributors">4 Orang</div>
+            <div class="stat-label">Total Penulis</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <div>
+            <div class="stat-value" id="statPubType">Artikel</div>
+            <div class="stat-label">Format Karya Tulis</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <div class="stat-value" id="statFirstAuthor">-</div>
+            <div class="stat-label">Penulis Pertama (First)</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div class="stat-value" id="statCorresponding">-</div>
+            <div class="stat-label">Korespondensi (Corr.)</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <div class="stat-value" id="statHighestScore">0.00 pts</div>
+            <div class="stat-label">Skor Tertinggi CRediT</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: MIDDLE DUAL PANEL (Chart & Order Hierarchy) -->
+      <section class="middle-grid">
+        <!-- Visual Bar Chart -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h3>Visualisasi Distribusi Kontribusi</h3>
+              <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Perbandingan persentase bobot kerja ilmiah per kontributor</p>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-bullet dark"></span> Skor CRediT</div>
+              <div class="legend-item"><span class="legend-bullet muted"></span> % Kontribusi</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Bars -->
+          <div class="chart-canvas-wrap" id="chartBarsContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Order Recommendation Hierarchy -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3>Urutan Kepenulisan Resmi</h3>
+            <span class="badge-pill" id="totalRankCountBadge">4 Peringkat</span>
+          </div>
+
+          <div class="order-list" id="orderRankList">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: MANAGE AUTHORS TABLE -->
+      <section class="table-panel">
+        <div class="table-top-header">
+          <div>
+            <h3>Daftar Kontributor & Matriks Peran</h3>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Atur tingkat kontribusi pada 14 aspek standar CRediT untuk setiap dosen & mahasiswa</p>
+          </div>
+          <div class="table-actions">
+            <button class="btn btn-secondary btn-sm" onclick="exportDataJSON()">
+              <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Ekspor JSON
+            </button>
+            <button class="btn btn-dark btn-sm" onclick="openAddAuthorModal()">
+              <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tambah Penulis
+            </button>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="authors-table">
+            <thead>
+              <tr>
+                <th style="width: 70px;">Urutan</th>
+                <th>Kontributor</th>
+                <th>Kategori</th>
+                <th>Peran Dominan CRediT</th>
+                <th>Skor Poin</th>
+                <th>Kontribusi %</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="authorsTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 1: EDIT PROJECT METADATA (Judul, Jenis, PIN)
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalProjectMeta">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Informasi Karya Tulis</h3>
+        <button class="btn-icon" onclick="closeModal('modalProjectMeta')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Judul Karya Tulis</label>
+          <input type="text" class="form-control" id="inputProjTitle" placeholder="Misal: Analisis Dampak Kecerdasan Buatan...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Jenis Karya Tulis</label>
+            <select class="form-control" id="inputProjType">
+              <option value="article">Artikel Jurnal Ilmiah</option>
+              <option value="book">Buku Referensi / Monograf</option>
+              <option value="book_chapter">Book Chapter (Bunga Rampai)</option>
+              <option value="proceeding">Prosiding Konferensi</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Target Jurnal / Penerbit</label>
+            <input type="text" class="form-control" id="inputProjVenue" placeholder="Misal: IEEE Access / Prenada Media">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kode Akses PIN (4-8 Karakter)</label>
+            <input type="password" class="form-control" id="inputProjPin" placeholder="PIN Proyek (cth: 2026)">
+            <small style="color:var(--text-muted); font-size:0.72rem;">PIN digunakan untuk melindungi dan membuka proyek Anda kembali.</small>
+          </div>
+          <div class="form-group">
+            <label>Catatan Tambahan</label>
+            <input type="text" class="form-control" id="inputProjNotes" placeholder="Catatan kesepakatan lab...">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalProjectMeta')">Batal</button>
+        <button class="btn btn-dark" onclick="saveProjectMeta()">Terapkan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: TAMBAH / EDIT KONTRIBUTOR & MATRIKS CREDIT
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalContributorMatrix">
+    <div class="modal-box wide">
+      <div class="modal-header">
+        <h3 id="modalContribTitle">Matriks Kontribusi CRediT Penulis</h3>
+        <button class="btn-icon" onclick="closeModal('modalContributorMatrix')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editContribId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nama Lengkap & Gelar</label>
+            <input type="text" class="form-control" id="contribName" placeholder="Cth: Dr. Ahmad Fauzi, M.Kom / Budi Santoso">
+          </div>
+          <div class="form-group">
+            <label>Kategori Penulis</label>
+            <select class="form-control" id="contribCategory">
+              <option value="dosen">Dosen / Peneliti Utama</option>
+              <option value="mahasiswa">Mahasiswa (S1/S2/S3)</option>
+              <option value="peneliti">Peneliti Eksternal / Mitra</option>
+              <option value="asisten">Asisten Riset</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Institusi / Afiliasi</label>
+            <input type="text" class="form-control" id="contribInstitution" placeholder="Cth: Universitas Indonesia">
+          </div>
+          <div class="form-group">
+            <label>Email Kontak</label>
+            <input type="email" class="form-control" id="contribEmail" placeholder="nama@kampus.ac.id">
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 0;">
+          <input type="checkbox" id="contribIsCorresponding" style="width:16px; height:16px; accent-color:var(--bg-dark);">
+          <label for="contribIsCorresponding" style="font-size:0.85rem; font-weight:700; cursor:pointer;">
+            Tandai sebagai Penulis Korespondensi (Corresponding Author)
+          </label>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--border-subtle); margin:8px 0;">
+
+        <div>
+          <h4 style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">Penilaian Peran CRediT (Contributor Roles Taxonomy)</h4>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:14px;">Pilih tingkat keterlibatan untuk masing-masing peran ilmiah:</p>
+
+          <div style="display:flex; flex-direction:column; gap:8px;" id="matrixRolesList">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalContributorMatrix')">Batal</button>
+        <button class="btn btn-dark" onclick="saveContributorFromModal()">Simpan Kontribusi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: CREDIT STATEMENT GENERATOR
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalCreditStatement">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>CRediT Authorship Statement</h3>
+        <button class="btn-icon" onclick="closeModal('modalCreditStatement')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.78rem; color:var(--text-muted);">
+          Teks ini diformat sesuai standar Elsevier, Springer, Wiley, dan Nature untuk dimasukkan ke bagian <em>Author Contributions</em> pada naskah Anda:
+        </p>
+        <textarea id="creditStatementArea" class="form-control" style="height:180px; font-family:var(--font-mono); font-size:0.82rem;" readonly></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalCreditStatement')">Tutup</button>
+        <button class="btn btn-dark" onclick="copyCreditStatement()">Salin Teks Statement</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: BERITA ACARA RESMI KESEPAKATAN KEPENULISAN
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalOfficialAgreement">
+    <div class="modal-box wide">
+      <div class="modal-header no-print">
+        <h3>Berita Acara Kesepakatan Hak Kepenulisan</h3>
+        <button class="btn-icon" onclick="closeModal('modalOfficialAgreement')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="official-doc" id="printableAgreementArea">
+          <div class="doc-header">
+            <h2>BERITA ACARA KESEPAKATAN HAK KEPENULISAN KARYA TULIS</h2>
+            <p>Berdasarkan Matriks Kontribusi Ilmiah CRediT (Contributor Roles Taxonomy)</p>
+          </div>
+
+          <p>Pada hari ini, disepakati bersama oleh seluruh tim penulis mengenai susunan urutan kepenulisan naskah dengan rincian sebagai berikut:</p>
+
+          <table style="width:100%; margin: 16px 0; font-size:0.84rem; border-collapse:collapse;">
+            <tr>
+              <td style="width:160px; font-weight:700; padding:4px 0;">Judul Karya Tulis</td>
+              <td style="padding:4px 0;">: <span id="docTitle">Analisis...</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; padding:4px 0;">Format Publikasi</td>
+              <td style="padding:4px 0;">: <span id="docType">Artikel Jurnal Ilmiah</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; padding:4px 0;">Target Publikasi</td>
+              <td style="padding:4px 0;">: <span id="docVenue">Jurnal Nasional/Internasional</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; padding:4px 0;">Tanggal Kesepakatan</td>
+              <td style="padding:4px 0;">: <span id="docDate">-</span></td>
+            </tr>
+          </table>
+
+          <h4 style="font-size:0.9rem; font-weight:800; margin:14px 0 8px;">Tabel Hasil Urutan Kepenulisan:</h4>
+          <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:18px;">
+            <thead>
+              <tr style="background:#f1f5f9; text-align:left;">
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Urutan</th>
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Nama Penulis</th>
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Afiliasi</th>
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Skor Poin</th>
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Kontribusi %</th>
+                <th style="border:1px solid #cbd5e1; padding:6px 10px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="docTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+
+          <p style="font-size:0.78rem; color:#475569; margin-top:12px;">
+            Seluruh pihak menyatakan bahwa penilaian peran dan pembobotan dilakukan secara transparan, jujur, serta mematuhi norma etika publikasi ilmiah (COPE & ICMJE). Kesepakatan ini mengikat seluruh penulis yang bertandatangan di bawah ini.
+          </p>
+
+          <div class="doc-signatures" id="docSignaturesContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer no-print">
+        <button class="btn btn-secondary" onclick="closeModal('modalOfficialAgreement')">Tutup</button>
+        <button class="btn btn-dark" onclick="window.print()">
+          <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+          Cetak Dokumen Resmi (PDF)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 5: SIMPAN KE CLOUD GOOGLE SHEETS
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalSaveProject">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Simpan Proyek ke Cloud</h3>
+        <button class="btn-icon" onclick="closeModal('modalSaveProject')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Data proyek dan hasil penilaian urutan penulis akan disimpan ke database Google Sheets melalui Vercel Functions API.
+        </p>
+
+        <div class="form-group">
+          <label>Konfirmasi PIN Akses (4-8 Digit)</label>
+          <input type="password" class="form-control" id="saveConfirmPin" placeholder="Masukkan PIN proyek Anda">
+          <small style="color:var(--text-muted); font-size:0.72rem;">PIN ini diperlukan mahasiswa dan dosen untuk membuka kembali proyek ini.</small>
+        </div>
+
+        <div id="saveStorageNotice" style="padding:10px 14px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; font-size:0.75rem;">
+          Memeriksa status koneksi Google Sheets...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalSaveProject')">Batal</button>
+        <button class="btn btn-dark" id="btnExecuteSave" onclick="executeCloudSave()">Simpan Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 6: BUKA PROYEK VIA KODE PIN
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalOpenProject">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Buka Proyek Tersimpan</h3>
+        <button class="btn-icon" onclick="closeModal('modalOpenProject')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Pilih Proyek Tersimpan</label>
+          <select class="form-control" id="selectSavedProject">
+            <option value="">-- Memuat daftar proyek... --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Atau Masukkan ID Proyek Manual</label>
+          <input type="text" class="form-control" id="inputManualProjectId" placeholder="cth: proj_1731234567890">
+        </div>
+
+        <div class="form-group">
+          <label>Kode Akses PIN</label>
+          <input type="password" class="form-control" id="inputOpenPin" placeholder="Masukkan PIN proyek">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalOpenProject')">Batal</button>
+        <button class="btn btn-dark" onclick="executeOpenProject()">Buka Proyek</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 7: DATABASE EXPLORER & LOKASI PENYIMPANAN
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modalDatabaseExplorer">
+    <div class="modal-box wide" style="max-width:960px;">
+      <div class="modal-header">
+        <div>
+          <h3>Database Explorer & Lokasi Penyimpanan</h3>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Inspeksi fisik tempat data karya tulis & kontributor disimpan</p>
+        </div>
+        <button class="btn-icon" onclick="closeModal('modalDatabaseExplorer')">&times;</button>
+      </div>
+      <div class="modal-body" style="gap:16px;">
+        <!-- Location Banner -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge-pill dark" id="dbStorageModeBadge">Local Database File</span>
+              <span style="font-size:0.8rem; font-weight:700; color:var(--text-main);" id="dbStatusHeading">Penyimpanan Fisik Lokal Aktif</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted);" id="dbLastSync">Sync: Baru saja</div>
+          </div>
+          <div style="font-size:0.76rem; color:#475569; word-break:break-all;">
+            <strong>Lokasi File di Mac Anda:</strong><br>
+            <code style="background:#e2e8f0; padding:3px 6px; border-radius:4px; font-family:var(--font-mono); font-size:0.74rem;" id="dbFilePathDisplay">/Users/admin/.gemini/antigravity/scratch/authorank/data/database.json</code>
+          </div>
+          <div id="dbSheetsUrlContainer" style="display:none; font-size:0.76rem;">
+            <strong>URL Google Spreadsheet:</strong><br>
+            <a id="dbSheetsUrlLink" href="#" target="_blank" style="color:#2563eb; text-decoration:underline;">Buka Google Spreadsheet di Tab Baru &rarr;</a>
+          </div>
+        </div>
+
+        <!-- Sub Tabs -->
+        <div style="display:flex; gap:8px; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
+          <button class="btn btn-secondary btn-sm" id="btnTabDbProjects" onclick="switchDbView('projects')">Tabel `projects` (<span id="countDbProjects">0</span>)</button>
+          <button class="btn btn-secondary btn-sm" id="btnTabDbContributors" onclick="switchDbView('contributors')">Tabel `contributors` (<span id="countDbContributors">0</span>)</button>
+          <button class="btn btn-secondary btn-sm" id="btnTabDbRaw" onclick="switchDbView('raw')">File Raw JSON</button>
+        </div>
+
+        <!-- View 1: Projects Table -->
+        <div id="dbViewProjects" style="overflow-x:auto;">
+          <table class="authors-table" style="font-size:0.8rem;">
+            <thead>
+              <tr>
+                <th>ID Proyek</th>
+                <th>Judul Karya Tulis</th>
+                <th>Format</th>
+                <th>Penulis Pertama</th>
+                <th>Korespondensi</th>
+                <th>PIN</th>
+                <th>Tanggal Simpan</th>
+              </tr>
+            </thead>
+            <tbody id="dbProjectsTableBody">
+              <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- View 2: Contributors Table -->
+        <div id="dbViewContributors" style="display:none; overflow-x:auto;">
+          <table class="authors-table" style="font-size:0.8rem;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Project ID</th>
+                <th>Nama Penulis</th>
+                <th>Kategori</th>
+                <th>Skor CRediT</th>
+                <th>Kontribusi %</th>
+                <th>Urutan</th>
+              </tr>
+            </thead>
+            <tbody id="dbContributorsTableBody">
+              <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- View 3: Raw JSON -->
+        <div id="dbViewRaw" style="display:none;">
+          <textarea id="dbRawJsonArea" class="form-control" style="height:260px; font-family:var(--font-mono); font-size:0.75rem;" readonly></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="downloadDatabaseJson()">Unduh File database.json</button>
+        <button class="btn btn-secondary" onclick="loadDatabaseData()">Segarkan (Refresh)</button>
+        <button class="btn btn-dark" onclick="closeModal('modalDatabaseExplorer')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==========================================================================
+       CLIENT APPLICATION LOGIC (CRediT Calculator, Store, and Interactive UI)
+       ========================================================================== -->
+  <script>
+    // Taksonomi Peran CRediT Resmi & Bobot Ilmiah
+    const CREDIT_ROLES = [
+      { id: 'conceptualization', label: 'Konseptualisasi Ide', weight: 1.2, desc: 'Perumusan atau evolusi ide dan tujuan penelitian' },
+      { id: 'methodology', label: 'Metodologi', weight: 1.2, desc: 'Pengembangan atau perancangan metodologi riset' },
+      { id: 'investigation', label: 'Investigasi & Eksperimen', weight: 1.1, desc: 'Pelaksanaan riset, lab, atau pengumpulan data' },
+      { id: 'formal_analysis', label: 'Analisis Formal', weight: 1.0, desc: 'Analisis statistik, komputasi, atau interpretasi data' },
+      { id: 'writing_draft', label: 'Penulisan Draf Awal', weight: 1.3, desc: 'Penyusunan naskah awal secara substansial' },
+      { id: 'writing_review', label: 'Penelaahan & Revisi', weight: 0.9, desc: 'Kajian kritis, komentar, atau revisi substansi' },
+      { id: 'software', label: 'Perangkat Lunak / Koding', weight: 0.8, desc: 'Pemrograman software atau perancangan algoritma' },
+      { id: 'validation', label: 'Validasi & Verifikasi', weight: 0.8, desc: 'Verifikasi replikasi/keandalan hasil' },
+      { id: 'data_curation', label: 'Kurasi & Manajemen Data', weight: 0.7, desc: 'Anotasi, pembersihan, dan pemeliharaan data' },
+      { id: 'resources', label: 'Penyediaan Sumber Daya', weight: 0.6, desc: 'Penyediaan instrumen, komputasi, bahan uji' },
+      { id: 'visualization', label: 'Visualisasi & Grafik', weight: 0.7, desc: 'Pembuatan grafik, diagram, gambar ilmiah' },
+      { id: 'supervision', label: 'Supervisi / Bimbingan', weight: 1.0, desc: 'Bimbingan dan kepemimpinan tim riset' },
+      { id: 'project_admin', label: 'Administrasi Proyek', weight: 0.6, desc: 'Pengelolaan dan koordinasi aktivitas penelitian' },
+      { id: 'funding_acquisition', label: 'Perolehan Dana / Hibah', weight: 0.6, desc: 'Pencarian dukungan finansial riset' }
+    ];
+
+    const BOOK_ROLES = [
+      { id: 'book_primary_chapter', label: 'Penulisan Bab Utama', weight: 1.4, desc: 'Penulisan bagian/bab inti buku' },
+      { id: 'book_editing', label: 'Penyuntingan Substansi Buku', weight: 1.1, desc: 'Editor umum, harmonisasi isi antar bab' },
+      { id: 'book_layout_prep', label: 'Penyelarasan & Tata Letak', weight: 0.7, desc: 'Proofreading bahasa dan tata letak naskah buku' }
+    ];
+
+    const LEVEL_MULTIPLIERS = {
+      lead: 1.0,
+      equal: 0.65,
+      supporting: 0.35,
+      none: 0.0
+    };
+
+    // State Aplikasi
+    let currentProject = {
+      id: 'proj_demo_1',
+      title: 'Analisis Efektivitas Model Machine Learning untuk Diagnosis Medis',
+      publicationType: 'article',
+      targetVenue: 'IEEE Journal of Biomedical Informatics',
+      pin: '2026',
+      notes: 'Penelitian bersama Lab Pascasarjana Informatika.',
+      createdAt: new Date().toISOString(),
+      contributors: [
+        {
+          id: 'c1',
+          name: 'Naufal Abiyyu, S.Kom',
+          category: 'mahasiswa',
+          institution: 'Institut Teknologi Bandung',
+          email: 'naufal@mhs.itb.ac.id',
+          isCorresponding: false,
+          contributions: {
+            conceptualization: 'equal',
+            methodology: 'lead',
+            investigation: 'lead',
+            formal_analysis: 'lead',
+            writing_draft: 'lead',
+            software: 'lead',
+            validation: 'equal'
+          }
+        },
+        {
+          id: 'c2',
+          name: 'Prof. Dr. Ir. Hendra Kusuma, M.Sc.',
+          category: 'dosen',
+          institution: 'Institut Teknologi Bandung',
+          email: 'hendra.k@itb.ac.id',
+          isCorresponding: true,
+          contributions: {
+            conceptualization: 'lead',
+            methodology: 'equal',
+            supervision: 'lead',
+            writing_review: 'lead',
+            funding_acquisition: 'lead',
+            resources: 'lead',
+            project_admin: 'lead'
+          }
+        },
+        {
+          id: 'c3',
+          name: 'Siti Rahmawati, S.Tr.Kom',
+          category: 'mahasiswa',
+          institution: 'Institut Teknologi Bandung',
+          email: 'siti.r@mhs.itb.ac.id',
+          isCorresponding: false,
+          contributions: {
+            investigation: 'equal',
+            data_curation: 'lead',
+            visualization: 'lead',
+            validation: 'supporting',
+            writing_review: 'supporting'
+          }
+        },
+        {
+          id: 'c4',
+          name: 'Dr. Eng. Dian Pratama, S.T., M.T.',
+          category: 'dosen',
+          institution: 'BRIN Riset Elektronika',
+          email: 'dian.pratama@brin.go.id',
+          isCorresponding: false,
+          contributions: {
+            resources: 'equal',
+            formal_analysis: 'supporting',
+            writing_review: 'equal',
+            validation: 'equal'
+          }
+        }
+      ]
+    };
+
+    let rankedContributors = [];
+
+    // Inisialisasi
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFromLocalStorage();
+      checkBackendHealth();
+      recalculateAndRender();
+    });
+
+    // Kalkulasi Skor Urutan Penulis
+    function calculateRanking() {
+      const activeRoles = [...CREDIT_ROLES];
+      if (currentProject.publicationType === 'book' || currentProject.publicationType === 'book_chapter') {
+        activeRoles.push(...BOOK_ROLES);
+      }
+
+      const scored = currentProject.contributors.map(c => {
+        let rawScore = 0;
+        const roleDetails = [];
+        const contribs = c.contributions || {};
+
+        activeRoles.forEach(r => {
+          const lvl = contribs[r.id] || 'none';
+          const multiplier = LEVEL_MULTIPLIERS[lvl] || 0;
+          const pt = r.weight * multiplier;
+
+          if (pt > 0) {
+            rawScore += pt;
+            roleDetails.push({
+              roleId: r.id,
+              roleLabel: r.label,
+              level: lvl,
+              point: parseFloat(pt.toFixed(2))
+            });
+          }
+        });
+
+        return {
+          ...c,
+          score: parseFloat(rawScore.toFixed(3)),
+          roleDetails,
+          activeRoleCount: roleDetails.length
+        };
+      });
+
+      const grandTotal = scored.reduce((sum, item) => sum + item.score, 0);
+
+      // Urutkan berdasarkan skor tertinggi
+      scored.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const aDraft = (a.contributions.writing_draft === 'lead' ? 2 : a.contributions.writing_draft === 'equal' ? 1 : 0);
+        const bDraft = (b.contributions.writing_draft === 'lead' ? 2 : b.contributions.writing_draft === 'equal' ? 1 : 0);
+        if (bDraft !== aDraft) return bDraft - aDraft;
+        return a.name.localeCompare(b.name);
+      });
+
+      rankedContributors = scored.map((item, idx) => {
+        const pct = grandTotal > 0 ? ((item.score / grandTotal) * 100) : (100 / scored.length);
+        return {
+          ...item,
+          order: idx + 1,
+          orderLabel: idx === 0 ? 'Penulis Pertama (First Author)' : `Penulis Ke-${idx + 1} (Co-Author)`,
+          percentage: parseFloat(pct.toFixed(1))
+        };
+      });
+    }
+
+    // Render Keseluruhan UI
+    function recalculateAndRender() {
+      calculateRanking();
+      renderProjectHeader();
+      renderQuickStats();
+      renderChart();
+      renderOrderHierarchy();
+      renderTable();
+      saveToLocalStorage();
+    }
+
+    // Render Header Info
+    function renderProjectHeader() {
+      document.getElementById('displayProjectTitle').textContent = currentProject.title;
+      
+      const typeLabels = {
+        article: 'Artikel Jurnal Ilmiah',
+        book: 'Buku Referensi / Monograf',
+        book_chapter: 'Book Chapter (Bunga Rampai)',
+        proceeding: 'Prosiding Konferensi'
+      };
+      document.getElementById('displayPubType').textContent = typeLabels[currentProject.publicationType] || 'Karya Tulis';
+      document.getElementById('displayVenue').textContent = currentProject.targetVenue ? `Target: ${currentProject.targetVenue}` : 'Target: Terbuka';
+      document.getElementById('displayPinBadge').textContent = `PIN: ${currentProject.pin ? '••••' : 'Belum diatur'}`;
+    }
+
+    // Render Quick Stats
+    function renderQuickStats() {
+      document.getElementById('statTotalContributors').textContent = `${rankedContributors.length} Orang`;
+
+      const typeShort = {
+        article: 'Artikel',
+        book: 'Buku',
+        book_chapter: 'Chapter',
+        proceeding: 'Prosiding'
+      };
+      document.getElementById('statPubType').textContent = typeShort[currentProject.publicationType] || 'Karya';
+
+      const firstAuthor = rankedContributors[0];
+      document.getElementById('statFirstAuthor').textContent = firstAuthor ? firstAuthor.name.split(',')[0].slice(0, 16) : '-';
+
+      const corrAuthor = rankedContributors.find(c => c.isCorresponding) || firstAuthor;
+      document.getElementById('statCorresponding').textContent = corrAuthor ? corrAuthor.name.split(',')[0].slice(0, 16) : '-';
+
+      const highest = firstAuthor ? firstAuthor.score : 0;
+      document.getElementById('statHighestScore').textContent = `${highest.toFixed(2)} pts`;
+    }
+
+    // Render Bicolor Bar Chart (Jobgio style)
+    function renderChart() {
+      const container = document.getElementById('chartBarsContainer');
+      container.innerHTML = '';
+
+      if (rankedContributors.length === 0) {
+        container.innerHTML = '<p style="margin:auto; font-size:0.8rem; color:var(--text-muted);">Belum ada data kontributor.</p>';
+        return;
+      }
+
+      const maxScore = Math.max(...rankedContributors.map(c => c.score), 1);
+
+      rankedContributors.forEach(c => {
+        const scoreHeightPct = Math.min(100, Math.max(12, (c.score / maxScore) * 100));
+        const pctHeightPct = Math.min(100, Math.max(8, c.percentage));
+
+        const barGroup = document.createElement('div');
+        barGroup.className = 'chart-bar-group';
+        barGroup.innerHTML = `
+          <div class="bar-tooltip">Skor: ${c.score} (${c.percentage}%)</div>
+          <div class="bars-pair">
+            <div class="bar bar-score" style="height: ${scoreHeightPct}%;"></div>
+            <div class="bar bar-percent" style="height: ${pctHeightPct}%;"></div>
+          </div>
+          <div class="chart-bar-label" title="${c.name}">${c.name.split(' ')[0]}</div>
+        `;
+        container.appendChild(barGroup);
+      });
+    }
+
+    // Render Order Hierarchy (Right panel)
+    function renderOrderHierarchy() {
+      const container = document.getElementById('orderRankList');
+      container.innerHTML = '';
+
+      document.getElementById('totalRankCountBadge').textContent = `${rankedContributors.length} Peringkat`;
+
+      rankedContributors.forEach((c, idx) => {
+        const card = document.createElement('div');
+        card.className = `order-rank-card ${idx === 0 ? 'top-rank' : ''}`;
+
+        const roleMain = c.roleDetails && c.roleDetails[0] ? c.roleDetails[0].roleLabel : 'Kontributor';
+
+        card.innerHTML = `
+          <div class="rank-left">
+            <div class="rank-number-badge">${c.order}</div>
+            <div>
+              <div class="rank-author-name">${c.name} ${c.isCorresponding ? '<span style="color:#b45309;">*</span>' : ''}</div>
+              <div class="rank-author-role">${roleMain} • ${c.percentage}%</div>
+            </div>
+          </div>
+          <div class="rank-badge-status">${idx === 0 ? 'First Author' : `Author #${c.order}`}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render Manage Authors Table
+    function renderTable() {
+      const tbody = document.getElementById('authorsTableBody');
+      tbody.innerHTML = '';
+
+      rankedContributors.forEach((c) => {
+        const initials = c.name.split(' ').filter(p => p).slice(0, 2).map(n => n[0]).join('').toUpperCase();
+        const dominantRoles = (c.roleDetails || []).slice(0, 2).map(r => r.roleLabel).join(', ') || 'Belum diisi';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="rank-number-badge" style="width:28px;height:28px;font-size:0.75rem;">${c.order}</div>
+          </td>
+          <td>
+            <div class="author-cell">
+              <div class="author-cell-avatar">${initials}</div>
+              <div>
+                <div class="author-meta-name">
+                  ${c.name}
+                  ${c.isCorresponding ? '<span class="table-badge is-corresponding" style="margin-left:4px;">★ Korespondensi</span>' : ''}
+                </div>
+                <div class="author-meta-inst">${c.institution || '-'}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="table-badge ${c.category === 'dosen' ? 'role-dosen' : 'role-mahasiswa'}">
+              ${c.category ? c.category.toUpperCase() : 'ANGGOTA'}
+            </span>
+          </td>
+          <td style="max-width: 220px;">
+            <div style="font-size:0.78rem; font-weight:600; color:var(--text-main);">${dominantRoles}</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">${c.activeRoleCount || 0} peran aktif</div>
+          </td>
+          <td>
+            <div class="score-value">${c.score.toFixed(2)}</div>
+          </td>
+          <td>
+            <div style="font-size:0.82rem; font-weight:700;">${c.percentage}%</div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: ${c.percentage}%;"></div>
+            </div>
+          </td>
+          <td>
+            <span class="badge-pill ${c.order === 1 ? 'dark' : ''}">
+              ${c.order === 1 ? 'First Author' : 'Co-Author'}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="row-actions" style="justify-content: flex-end;">
+              <button class="btn-icon" title="Edit Matriks CRediT" onclick="openEditAuthorModal('${c.id}')">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn-icon" title="Toggle Penulis Korespondensi" onclick="toggleCorresponding('${c.id}')">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </button>
+              <button class="btn-icon" title="Hapus Kontributor" onclick="deleteAuthor('${c.id}')">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Modal Control
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    // Modal Project Meta
+    function openEditProjectMetaModal() {
+      document.getElementById('inputProjTitle').value = currentProject.title;
+      document.getElementById('inputProjType').value = currentProject.publicationType;
+      document.getElementById('inputProjVenue').value = currentProject.targetVenue || '';
+      document.getElementById('inputProjPin').value = currentProject.pin || '';
+      document.getElementById('inputProjNotes').value = currentProject.notes || '';
+      openModal('modalProjectMeta');
+    }
+
+    function saveProjectMeta() {
+      const title = document.getElementById('inputProjTitle').value.trim();
+      const pubType = document.getElementById('inputProjType').value;
+      const venue = document.getElementById('inputProjVenue').value.trim();
+      const pin = document.getElementById('inputProjPin').value.trim();
+      const notes = document.getElementById('inputProjNotes').value.trim();
+
+      if (!title) {
+        showToast('Judul karya tulis tidak boleh kosong!');
+        return;
+      }
+      if (pin && pin.length < 4) {
+        showToast('PIN minimal 4 karakter!');
+        return;
+      }
+
+      currentProject.title = title;
+      currentProject.publicationType = pubType;
+      currentProject.targetVenue = venue;
+      currentProject.pin = pin;
+      currentProject.notes = notes;
+
+      closeModal('modalProjectMeta');
+      recalculateAndRender();
+      showToast('Informasi karya tulis diperbarui.');
+    }
+
+    // Modal Contributor & Matrix
+    function openAddAuthorModal() {
+      document.getElementById('modalContribTitle').textContent = 'Tambah Kontributor & Matriks Peran';
+      document.getElementById('editContribId').value = '';
+      document.getElementById('contribName').value = '';
+      document.getElementById('contribCategory').value = 'mahasiswa';
+      document.getElementById('contribInstitution').value = 'Institut Teknologi Bandung';
+      document.getElementById('contribEmail').value = '';
+      document.getElementById('contribIsCorresponding').checked = false;
+
+      renderMatrixForm({});
+      openModal('modalContributorMatrix');
+    }
+
+    function openEditAuthorModal(authorId) {
+      const author = currentProject.contributors.find(c => c.id === authorId);
+      if (!author) return;
+
+      document.getElementById('modalContribTitle').textContent = `Ubah Kontribusi: ${author.name}`;
+      document.getElementById('editContribId').value = author.id;
+      document.getElementById('contribName').value = author.name;
+      document.getElementById('contribCategory').value = author.category || 'dosen';
+      document.getElementById('contribInstitution').value = author.institution || '';
+      document.getElementById('contribEmail').value = author.email || '';
+      document.getElementById('contribIsCorresponding').checked = Boolean(author.isCorresponding);
+
+      renderMatrixForm(author.contributions || {});
+      openModal('modalContributorMatrix');
+    }
+
+    function renderMatrixForm(existingContributions) {
+      const listContainer = document.getElementById('matrixRolesList');
+      listContainer.innerHTML = '';
+
+      const roles = [...CREDIT_ROLES];
+      if (currentProject.publicationType === 'book' || currentProject.publicationType === 'book_chapter') {
+        roles.push(...BOOK_ROLES);
+      }
+
+      roles.forEach(role => {
+        const currentVal = existingContributions[role.id] || 'none';
+        const row = document.createElement('div');
+        row.className = 'role-row';
+        row.innerHTML = `
+          <div>
+            <div class="role-desc-title">${role.label} <span style="font-weight:400; color:var(--text-muted); font-size:0.7rem;">(Bobot ${role.weight})</span></div>
+            <div class="role-desc-sub">${role.desc}</div>
+          </div>
+          <div>
+            <select class="role-level-select" data-role-id="${role.id}">
+              <option value="none" ${currentVal === 'none' ? 'selected' : ''}>Tidak Ada (0)</option>
+              <option value="supporting" ${currentVal === 'supporting' ? 'selected' : ''}>Supporting / Pendukung</option>
+              <option value="equal" ${currentVal === 'equal' ? 'selected' : ''}>Equal / Seimbang</option>
+              <option value="lead" ${currentVal === 'lead' ? 'selected' : ''}>Lead / Pemimpin Utama</option>
+            </select>
+          </div>
+        `;
+        listContainer.appendChild(row);
+      });
+    }
+
+    function saveContributorFromModal() {
+      const name = document.getElementById('contribName').value.trim();
+      const category = document.getElementById('contribCategory').value;
+      const institution = document.getElementById('contribInstitution').value.trim();
+      const email = document.getElementById('contribEmail').value.trim();
+      const isCorresponding = document.getElementById('contribIsCorresponding').checked;
+      const editId = document.getElementById('editContribId').value;
+
+      if (!name) {
+        showToast('Nama kontributor wajib diisi!');
+        return;
+      }
+
+      const contributions = {};
+      const selects = document.querySelectorAll('#matrixRolesList select');
+      selects.forEach(sel => {
+        const roleId = sel.getAttribute('data-role-id');
+        contributions[roleId] = sel.value;
+      });
+
+      if (editId) {
+        // Update
+        const idx = currentProject.contributors.findIndex(c => c.id === editId);
+        if (idx !== -1) {
+          currentProject.contributors[idx] = {
+            ...currentProject.contributors[idx],
+            name,
+            category,
+            institution,
+            email,
+            isCorresponding,
+            contributions
+          };
+        }
+      } else {
+        // Add new
+        currentProject.contributors.push({
+          id: `c_${Date.now()}`,
+          name,
+          category,
+          institution,
+          email,
+          isCorresponding,
+          contributions
+        });
+      }
+
+      closeModal('modalContributorMatrix');
+      recalculateAndRender();
+      showToast('Data kontributor dan matriks berhasil disimpan.');
+    }
+
+    function toggleCorresponding(authorId) {
+      const author = currentProject.contributors.find(c => c.id === authorId);
+      if (author) {
+        author.isCorresponding = !author.isCorresponding;
+        recalculateAndRender();
+        showToast(`${author.name} ${author.isCorresponding ? 'ditetapkan' : 'dilepas'} sebagai Penulis Korespondensi.`);
+      }
+    }
+
+    function deleteAuthor(authorId) {
+      if (currentProject.contributors.length <= 1) {
+        showToast('Minimal harus ada 1 penulis dalam karya tulis!');
+        return;
+      }
+      if (confirm('Apakah Anda yakin ingin menghapus kontributor ini?')) {
+        currentProject.contributors = currentProject.contributors.filter(c => c.id !== authorId);
+        recalculateAndRender();
+        showToast('Kontributor dihapus.');
+      }
+    }
+
+    // Modal CRediT Statement
+    function openCreditStatementModal() {
+      const lines = rankedContributors.map(c => {
+        const leadOrEqual = (c.roleDetails || [])
+          .filter(r => r.level === 'lead' || r.level === 'equal')
+          .map(r => r.roleLabel);
+
+        const supporting = (c.roleDetails || [])
+          .filter(r => r.level === 'supporting')
+          .map(r => `${r.roleLabel} (supporting)`);
+
+        const all = [...leadOrEqual, ...supporting];
+        const roleStr = all.length > 0 ? all.join(', ') : 'General academic review';
+
+        return `${c.name}: ${roleStr}.`;
+      });
+
+      const statement = `CRediT authorship contribution statement:\n\n${lines.join('\n\n')}`;
+      document.getElementById('creditStatementArea').value = statement;
+      openModal('modalCreditStatement');
+    }
+
+    function copyCreditStatement() {
+      const text = document.getElementById('creditStatementArea').value;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('CRediT Statement berhasil disalin ke clipboard!');
+      }).catch(() => {
+        showToast('Gagal menyalin otomatis, silakan copy manual.');
+      });
+    }
+
+    // Modal Official Agreement
+    function openOfficialAgreementModal() {
+      document.getElementById('docTitle').textContent = currentProject.title;
+      document.getElementById('docType').textContent = document.getElementById('displayPubType').textContent;
+      document.getElementById('docVenue').textContent = currentProject.targetVenue || 'Penerbit Ilmiah';
+      document.getElementById('docDate').textContent = new Date().toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Render Table
+      const docTbody = document.getElementById('docTableBody');
+      docTbody.innerHTML = '';
+      rankedContributors.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center; font-weight:700;">${c.order}</td>
+          <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:700;">${c.name}</td>
+          <td style="border:1px solid #cbd5e1; padding:6px 10px;">${c.institution || '-'}</td>
+          <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center; font-family:var(--font-mono);">${c.score.toFixed(2)}</td>
+          <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center; font-weight:700;">${c.percentage}%</td>
+          <td style="border:1px solid #cbd5e1; padding:6px 10px; font-size:0.75rem;">
+            ${c.order === 1 ? 'First Author' : `Author #${c.order}`}
+            ${c.isCorresponding ? ' (Korespondensi)' : ''}
+          </td>
+        `;
+        docTbody.appendChild(tr);
+      });
+
+      // Render Signatures
+      const sigs = document.getElementById('docSignaturesContainer');
+      sigs.innerHTML = '';
+      rankedContributors.forEach(c => {
+        const box = document.createElement('div');
+        box.className = 'sig-box';
+        box.innerHTML = `
+          <div style="height: 50px;"></div>
+          <div class="name">${c.name}</div>
+          <div class="role-sub">${c.category === 'dosen' ? 'Dosen / Peneliti' : 'Mahasiswa'} (Penulis #${c.order})</div>
+        `;
+        sigs.appendChild(box);
+      });
+
+      openModal('modalOfficialAgreement');
+    }
+
+    // Modal Cloud Save & Open
+    function openSaveProjectModal() {
+      document.getElementById('saveConfirmPin').value = currentProject.pin || '';
+      openModal('modalSaveProject');
+    }
+
+    async function executeCloudSave() {
+      const pin = document.getElementById('saveConfirmPin').value.trim();
+      if (!pin || pin.length < 4) {
+        showToast('PIN wajib diisi minimal 4 digit!');
+        return;
+      }
+      currentProject.pin = pin;
+
+      const btn = document.getElementById('btnExecuteSave');
+      btn.textContent = 'Menyimpan...';
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          ...currentProject,
+          contributors: rankedContributors
+        };
+
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.ok) {
+          showToast('Proyek berhasil disimpan ke Cloud Database!');
+          closeModal('modalSaveProject');
+        } else {
+          // Fallback lokal jika backend belum berjalan atau Sheets belum dipasang
+          saveToLocalStorage();
+          showToast(`Tersimpan secara lokal (${json.error ? json.error.message : 'Backend offline'}).`);
+          closeModal('modalSaveProject');
+        }
+      } catch (err) {
+        saveToLocalStorage();
+        showToast('Tersimpan di penyimpanan lokal browser Anda.');
+        closeModal('modalSaveProject');
+      } finally {
+        btn.textContent = 'Simpan Sekarang';
+        btn.disabled = false;
+      }
+    }
+
+    async function openOpenProjectModal() {
+      openModal('modalOpenProject');
+      const select = document.getElementById('selectSavedProject');
+      select.innerHTML = '<option value="">-- Memuat daftar proyek dari cloud... --</option>';
+
+      try {
+        const res = await fetch('/api/projects');
+        const json = await res.json();
+
+        if (json.ok && Array.isArray(json.data.projects) && json.data.projects.length > 0) {
+          select.innerHTML = '<option value="">-- Pilih dari proyek tersimpan --</option>';
+          json.data.projects.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.title} (${p.totalContributors} Penulis)`;
+            select.appendChild(opt);
+          });
+        } else {
+          select.innerHTML = '<option value="">Tidak ada proyek tersimpan di server.</option>';
+        }
+      } catch (e) {
+        select.innerHTML = '<option value="">Server offline (gunakan ID manual jika ada)</option>';
+      }
+    }
+
+    async function executeOpenProject() {
+      const select = document.getElementById('selectSavedProject');
+      const manualId = document.getElementById('inputManualProjectId').value.trim();
+      const projId = select.value || manualId;
+      const pin = document.getElementById('inputOpenPin').value.trim();
+
+      if (!projId) {
+        showToast('Pilih proyek atau masukkan ID proyek!');
+        return;
+      }
+      if (!pin) {
+        showToast('PIN akses wajib dimasukkan!');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/projects?id=${encodeURIComponent(projId)}&pin=${encodeURIComponent(pin)}`);
+        const json = await res.json();
+
+        if (json.ok && json.data) {
+          currentProject = {
+            id: json.data.project.id,
+            title: json.data.project.title,
+            publicationType: json.data.project.publicationType,
+            targetVenue: json.data.project.targetVenue,
+            pin: pin,
+            notes: json.data.project.notes || '',
+            contributors: json.data.contributors
+          };
+          recalculateAndRender();
+          closeModal('modalOpenProject');
+          showToast('Proyek berhasil dimuat!');
+        } else {
+          showToast(json.error ? json.error.message : 'PIN salah atau proyek tidak ditemukan.');
+        }
+      } catch (err) {
+        showToast('Gagal menghubungi backend server.');
+      }
+    }
+
+    // Health Check Backend
+    async function checkBackendHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const json = await res.json();
+        const dot = document.getElementById('serverStatusDot');
+        const envLabel = document.getElementById('appEnvironmentLabel');
+
+        if (json.ok) {
+          if (json.environment.storageMode === 'google_sheets_live') {
+            dot.style.background = '#16a34a';
+            dot.title = 'Google Sheets Database Terhubung';
+            envLabel.textContent = 'Sheets Terhubung';
+          } else {
+            dot.style.background = '#2563eb';
+            dot.title = 'Mode Standalone / Local Cache';
+            envLabel.textContent = 'Siap Standalone';
+          }
+        }
+      } catch (err) {
+        // Berjalan dalam mode file langsung (file://) atau tanpa dev server
+        const envLabel = document.getElementById('appEnvironmentLabel');
+        envLabel.textContent = 'Mode Lokal Browser';
+      }
+    }
+
+    // Local Storage Fallback
+    function saveToLocalStorage() {
+      try {
+        localStorage.setItem('authorank_current_project', JSON.stringify(currentProject));
+      } catch (e) {}
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const saved = localStorage.getItem('authorank_current_project');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.title && Array.isArray(parsed.contributors)) {
+            currentProject = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+        project: currentProject,
+        rankedContributors,
+        exportedAt: new Date().toISOString()
+      }, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `authorank_${currentProject.id}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Data proyek berhasil diekspor sebagai JSON.');
+    }
+
+    // Toast UI Helper
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <svg style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Database Explorer
+    let cachedDbData = null;
+
+    async function openDatabaseExplorerModal() {
+      openModal('modalDatabaseExplorer');
+      await loadDatabaseData();
+    }
+
+    async function loadDatabaseData() {
+      try {
+        const res = await fetch('/api/database');
+        const json = await res.json();
+
+        if (json.ok && json.data) {
+          cachedDbData = json.data;
+          renderDatabaseInspector(json.data);
+        } else {
+          showToast('Gagal memuat status database.');
+        }
+      } catch (err) {
+        showToast('Server API tidak dapat dijangkau.');
+      }
+    }
+
+    function renderDatabaseInspector(data) {
+      const modeBadge = document.getElementById('dbStorageModeBadge');
+      const heading = document.getElementById('dbStatusHeading');
+      const pathDisplay = document.getElementById('dbFilePathDisplay');
+      const sheetsContainer = document.getElementById('dbSheetsUrlContainer');
+      const sheetsLink = document.getElementById('dbSheetsUrlLink');
+
+      if (data.storageLocation.type === 'google_sheets_cloud') {
+        modeBadge.textContent = 'Google Sheets Live Cloud';
+        modeBadge.className = 'badge-pill status-ready';
+        heading.textContent = 'Tersambung ke Google Spreadsheet';
+        sheetsContainer.style.display = 'block';
+        sheetsLink.href = data.storageLocation.googleSpreadsheetUrl;
+      } else {
+        modeBadge.textContent = 'Local Database File (JSON)';
+        modeBadge.className = 'badge-pill dark';
+        heading.textContent = 'Tersimpan di File Komputer Lokal';
+        sheetsContainer.style.display = 'none';
+      }
+
+      pathDisplay.textContent = data.storageLocation.localFilePath || '-';
+      document.getElementById('dbLastSync').textContent = `Terakhir Sync: ${new Date().toLocaleTimeString('id-ID')}`;
+
+      // Table counts
+      const projects = (data.tables && data.tables.projects) || [];
+      const contributors = (data.tables && data.tables.contributors) || [];
+      document.getElementById('countDbProjects').textContent = projects.length;
+      document.getElementById('countDbContributors').textContent = contributors.length;
+
+      // Render Projects
+      const tbodyProj = document.getElementById('dbProjectsTableBody');
+      tbodyProj.innerHTML = '';
+      if (projects.length === 0) {
+        tbodyProj.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Belum ada data proyek tersimpan.</td></tr>';
+      } else {
+        projects.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code style="font-size:0.75rem;">${p.id}</code></td>
+            <td style="font-weight:700;">${p.title}</td>
+            <td><span class="badge-pill">${p.publicationType}</span></td>
+            <td>${p.firstAuthor || '-'}</td>
+            <td>${p.correspondingAuthor || '-'}</td>
+            <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${p.pin || '••••'}</code></td>
+            <td style="font-size:0.72rem; color:var(--text-muted);">${new Date(p.updatedAt || p.createdAt).toLocaleString('id-ID')}</td>
+          `;
+          tbodyProj.appendChild(tr);
+        });
+      }
+
+      // Render Contributors
+      const tbodyContrib = document.getElementById('dbContributorsTableBody');
+      tbodyContrib.innerHTML = '';
+      if (contributors.length === 0) {
+        tbodyContrib.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Belum ada data kontributor tersimpan.</td></tr>';
+      } else {
+        contributors.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code style="font-size:0.72rem;">${c.id}</code></td>
+            <td><code style="font-size:0.72rem;">${c.projectId}</code></td>
+            <td style="font-weight:700;">${c.name}</td>
+            <td><span class="table-badge">${c.category || 'Anggota'}</span></td>
+            <td style="font-family:var(--font-mono); font-weight:700;">${c.score}</td>
+            <td style="font-weight:700;">${c.percentage}%</td>
+            <td><span class="badge-pill dark" style="font-size:0.7rem;">#${c.order}</span></td>
+          `;
+          tbodyContrib.appendChild(tr);
+        });
+      }
+
+      // Raw JSON
+      document.getElementById('dbRawJsonArea').value = JSON.stringify(data, null, 2);
+    }
+
+    function switchDbView(tab) {
+      document.getElementById('dbViewProjects').style.display = tab === 'projects' ? 'block' : 'none';
+      document.getElementById('dbViewContributors').style.display = tab === 'contributors' ? 'block' : 'none';
+      document.getElementById('dbViewRaw').style.display = tab === 'raw' ? 'block' : 'none';
+
+      document.getElementById('btnTabDbProjects').className = `btn ${tab === 'projects' ? 'btn-dark' : 'btn-secondary'} btn-sm`;
+      document.getElementById('btnTabDbContributors').className = `btn ${tab === 'contributors' ? 'btn-dark' : 'btn-secondary'} btn-sm`;
+      document.getElementById('btnTabDbRaw').className = `btn ${tab === 'raw' ? 'btn-dark' : 'btn-secondary'} btn-sm`;
+    }
+
+    function downloadDatabaseJson() {
+      if (!cachedDbData) return;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cachedDbData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `authorank_database_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('File database.json berhasil diunduh.');
+    }
+
+    function switchTab(tab) {
+      showToast('Menampilkan tampilan utama.');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "appName": "Authorank Database",
+    "lastUpdated": "2026-11-10T07:57:34.232Z",
+    "totalProjects": 1,
+    "totalContributors": 4,
+    "storageType": "local_json_persisted"
+  },
+  "tables": {
+    "projects": [
+      {
+        "id": "proj_sample_01",
+        "title": "Analisis Efektivitas Model Machine Learning untuk Diagnosis Medis",
+        "publicationType": "article",
+        "targetVenue": "IEEE Journal of Biomedical Informatics",
+        "pin": "2026",
+        "totalContributors": 4,
+        "firstAuthor": "Naufal Abiyyu, S.Kom",
+        "correspondingAuthor": "Prof. Dr. Ir. Hendra Kusuma, M.Sc.",
+        "notes": "Penelitian bersama Lab Pascasarjana Informatika.",
+        "createdAt": "2026-11-10T07:57:34.219Z",
+        "updatedAt": "2026-11-10T07:57:34.232Z"
+      }
+    ],
+    "contributors": [
+      {
+        "id": "c1",
+        "projectId": "proj_sample_01",
+        "name": "Naufal Abiyyu, S.Kom",
+        "category": "mahasiswa",
+        "institution": "Institut Teknologi Bandung",
+        "email": "naufal@mhs.itb.ac.id",
+        "isCorresponding": false,
+        "score": 6.7,
+        "percentage": 42.5,
+        "order": 1,
+        "contributions": {
+          "conceptualization": "equal",
+          "methodology": "lead",
+          "investigation": "lead",
+          "formal_analysis": "lead",
+          "writing_draft": "lead",
+          "software": "lead",
+          "validation": "equal"
+        }
+      },
+      {
+        "id": "c2",
+        "projectId": "proj_sample_01",
+        "name": "Prof. Dr. Ir. Hendra Kusuma, M.Sc.",
+        "category": "dosen",
+        "institution": "Institut Teknologi Bandung",
+        "email": "hendra.k@itb.ac.id",
+        "isCorresponding": true,
+        "score": 5.8,
+        "percentage": 36.8,
+        "order": 2,
+        "contributions": {
+          "conceptualization": "lead",
+          "supervision": "lead",
+          "writing_review": "lead",
+          "funding_acquisition": "lead",
+          "resources": "lead"
+        }
+      },
+      {
+        "id": "c3",
+        "projectId": "proj_sample_01",
+        "name": "Siti Rahmawati, S.Tr.Kom",
+        "category": "mahasiswa",
+        "institution": "Institut Teknologi Bandung",
+        "email": "siti.r@mhs.itb.ac.id",
+        "isCorresponding": false,
+        "score": 2.1,
+        "percentage": 13.3,
+        "order": 3,
+        "contributions": {
+          "data_curation": "lead",
+          "visualization": "lead",
+          "validation": "supporting"
+        }
+      },
+      {
+        "id": "c4",
+        "projectId": "proj_sample_01",
+        "name": "Dr. Eng. Dian Pratama, S.T., M.T.",
+        "category": "dosen",
+        "institution": "BRIN Riset Elektronika",
+        "email": "dian.pratama@brin.go.id",
+        "isCorresponding": false,
+        "score": 1.15,
+        "percentage": 7.4,
+        "order": 4,
+        "contributions": {
+          "resources": "equal",
+          "writing_review": "equal"
+        }
+      }
+    ]
+  }
+}
